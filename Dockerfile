@@ -2,7 +2,7 @@
 # Multi-stage: Node 20 (build) -> nginx-alpine (runtime).
 
 # ---------- 1. BUILD ----------
-FROM node:20-alpine AS build
+FROM node:25-alpine AS build
 WORKDIR /app
 
 # Najpierw lockfile + manifest dla cachowania npm install.
