@@ -1,0 +1,29 @@
+node_modules
+dist
+dist-ssr
+*.local
+
+.vite
+.cache
+
+# Editor
+.vscode
+.idea
+.DS_Store
+
+# Git
+.git
+.gitignore
+
+# Lokalne env
+.env
+.env.local
+.env.*.local
+
+# Docker
+Dockerfile*
+.dockerignore
+
+# Testy
+coverage
+test-results

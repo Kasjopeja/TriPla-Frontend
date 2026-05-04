@@ -1,0 +1,119 @@
+@import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap');
+
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+@layer base {
+  /* Domyślny kolor borderów i divide — działa w obu trybach bez ręcznego dopisywania dark: */
+  *,
+  ::before,
+  ::after {
+    border-color: theme('colors.slate.300');
+  }
+  html.dark *,
+  html.dark ::before,
+  html.dark ::after {
+    border-color: theme('colors.slate.700');
+  }
+}
+
+html,
+body,
+#root {
+  height: 100%;
+}
+
+body {
+  background: theme('backgroundImage.app-bg');
+  background-attachment: fixed;
+  color: theme('colors.slate.900');
+  -webkit-font-smoothing: antialiased;
+  -moz-osx-font-smoothing: grayscale;
+}
+
+html.dark body {
+  background: theme('backgroundImage.app-bg-dark');
+  color: theme('colors.slate.100');
+}
+
+@layer components {
+  .card {
+    @apply rounded-2xl border border-slate-300 bg-white shadow-soft;
+  }
+  html.dark .card {
+    @apply border-slate-700 bg-slate-900;
+  }
+
+  .btn-primary {
+    @apply rounded-xl bg-brand-gradient px-4 py-2 text-sm font-semibold text-white shadow-glow transition hover:brightness-110 active:scale-[0.98] disabled:opacity-50 disabled:hover:brightness-100;
+  }
+
+  .btn-secondary {
+    @apply rounded-xl border border-slate-300 bg-white px-4 py-2 text-sm font-medium text-slate-700 shadow-soft transition hover:bg-slate-50 active:scale-[0.98] disabled:opacity-50;
+  }
+  html.dark .btn-secondary {
+    @apply border-slate-700 bg-slate-800 text-slate-200 hover:bg-slate-700;
+  }
+
+  .btn-ghost {
+    @apply rounded-lg px-3 py-1.5 text-sm font-medium text-slate-600 transition hover:bg-slate-200/70;
+  }
+  html.dark .btn-ghost {
+    @apply text-slate-300 hover:bg-slate-800;
+  }
+
+  .btn-danger-ghost {
+    @apply rounded-lg px-3 py-1.5 text-sm font-medium text-red-600 transition hover:bg-red-50;
+  }
+  html.dark .btn-danger-ghost {
+    @apply text-red-400 hover:bg-red-950/40;
+  }
+
+  .input {
+    @apply w-full rounded-xl border border-slate-300 bg-white px-3 py-2 text-sm text-slate-900 shadow-sm transition placeholder:text-slate-400 focus:border-brand-500 focus:outline-none focus:ring-2 focus:ring-brand-200;
+  }
+  html.dark .input {
+    @apply border-slate-700 bg-slate-900/60 text-slate-100 placeholder:text-slate-500;
+  }
+  html.dark .input:focus {
+    /* fioletowy ring tylko w dark – inline CSS-em żeby uniknąć rebuildu cache Tailwinda */
+    --tw-ring-color: #6f6399;
+  }
+
+  .label {
+    @apply mb-1 block text-xs font-semibold uppercase tracking-wide text-slate-500;
+  }
+  html.dark .label {
+    @apply text-slate-400;
+  }
+
+  .gradient-text {
+    @apply bg-brand-gradient bg-clip-text text-transparent;
+  }
+
+  .muted {
+    @apply text-slate-600;
+  }
+  html.dark .muted {
+    @apply text-slate-400;
+  }
+}
+
+::-webkit-scrollbar {
+  width: 10px;
+  height: 10px;
+}
+::-webkit-scrollbar-thumb {
+  background: rgba(100, 116, 139, 0.3);
+  border-radius: 999px;
+}
+::-webkit-scrollbar-thumb:hover {
+  background: rgba(100, 116, 139, 0.5);
+}
+html.dark ::-webkit-scrollbar-thumb {
+  background: rgba(148, 163, 184, 0.25);
+}
+html.dark ::-webkit-scrollbar-thumb:hover {
+  background: rgba(148, 163, 184, 0.4);
+}
