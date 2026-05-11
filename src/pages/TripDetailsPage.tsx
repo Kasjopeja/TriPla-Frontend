@@ -141,7 +141,9 @@ export function TripDetailsPage() {
           {activeTab === 'comments' && (
             <CommentsTab tripId={data.id} comments={data.comments} />
           )}
-          {activeTab === 'history' && <HistoryTab tripId={data.id} />}
+          {activeTab === 'history' && (
+            <HistoryTab tripId={data.id} participants={data.participants} />
+          )}
         </div>
       </div>
     </div>

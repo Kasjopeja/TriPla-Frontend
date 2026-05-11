@@ -190,6 +190,20 @@ export interface TripChangeLogDto {
   occurredAt: string;
 }
 
+export type HistorySortField = 'occurredAt' | 'type' | 'actorEmail';
+export type HistorySortDirection = 'asc' | 'desc';
+
+export interface HistoryQuery {
+  type?: string;
+  actorId?: Uuid;
+  from?: string;
+  to?: string;
+  sortBy?: HistorySortField;
+  sortDir?: HistorySortDirection;
+  skip?: number;
+  limit?: number;
+}
+
 export interface ApiProblem {
   type?: string;
   title?: string;

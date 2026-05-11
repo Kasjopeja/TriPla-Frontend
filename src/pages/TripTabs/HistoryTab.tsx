@@ -1,38 +1,20 @@
+import { useMemo, useState } from 'react';
 import { useQuery } from '@tanstack/react-query';
 import { format } from 'date-fns';
+import { ChevronLeft, ChevronRight } from 'lucide-react';
 import { historyApi } from '@/api/history';
-import type { TripChangeLogDto, Uuid } from '@/types';
+import type { ParticipantDto, TripChangeLogDto, Uuid } from '@/types';
+import {
+  defaultFilters,
+  filtersToQuery,
+  HistoryFilters,
+  type HistoryFiltersValue,
+} from './HistoryFilters';
+import { labelFor } from './historyMeta';
 
 interface Props {
   tripId: Uuid;
-}
-
-const typeLabel: Record<string, string> = {
-  TripCreated: 'Utworzono wycieczkę',
-  TripUpdated: 'Zaktualizowano wycieczkę',
-  TripDeleted: 'Usunięto wycieczkę',
-  ParticipantInvited: 'Zaproszono uczestnika',
-  ParticipantRemoved: 'Usunięto uczestnika',
-  ParticipantLeft: 'Uczestnik opuścił wycieczkę',
-  RoleChanged: 'Zmieniono rolę',
-  AttractionAdded: 'Dodano atrakcję',
-  AttractionUpdated: 'Zaktualizowano atrakcję',
-  AttractionDeleted: 'Usunięto atrakcję',
-  ExpenseAdded: 'Dodano wydatek',
-  ExpenseUpdated: 'Zaktualizowano wydatek',
-  ExpenseDeleted: 'Usunięto wydatek',
-  ExpenseSettled: 'Oznaczono wydatek jako rozliczony',
-  ExpenseUnsettled: 'Cofnięto rozliczenie wydatku',
-  AllExpensesSettled: 'Rozliczono wszystkie wydatki',
-  AllExpensesUnsettled: 'Cofnięto rozliczenie wszystkich wydatków',
-  CommentAdded: 'Dodano komentarz',
-  CommentReplied: 'Dodano odpowiedź',
-  CommentUpdated: 'Edytowano komentarz',
-  CommentDeleted: 'Usunięto komentarz',
-};
-
-function labelFor(type: string): string {
-  return typeLabel[type] ?? type;
+  participants: ParticipantDto[];
 }
 
 function parsePayload(json: string | null): Record<string, unknown> | null {
@@ -180,37 +162,66 @@ function describeEntry(entry: TripChangeLogDto): { summary: string; changes: [st
   }
 }
 
-export function HistoryTab({ tripId }: Props) {
-  const { data, isLoading, error } = useQuery({
-    queryKey: ['trip', tripId, 'history'],
-    queryFn: () => historyApi.list(tripId),
+export function HistoryTab({ tripId, participants }: Props) {
+  const [filters, setFilters] = useState<HistoryFiltersValue>(defaultFilters);
+  const [page, setPage] = useState(0);
+
+  const skip = page * filters.limit;
+  const query = useMemo(() => filtersToQuery(filters, skip), [filters, skip]);
+
+  const { data, isLoading, error, isFetching } = useQuery({
+    queryKey: ['trip', tripId, 'history', query],
+    queryFn: () => historyApi.list(tripId, query),
+    placeholderData: (prev) => prev,
   });
 
-  if (isLoading) return <p className="text-slate-600 dark:text-slate-300">Ładowanie...</p>;
-  if (error)
-    return (
-      <p className="rounded bg-red-50 px-3 py-2 text-red-700 dark:bg-red-950/40 dark:text-red-300">
-        Nie udało się pobrać historii. Upewnij się, że Mongo działa.
-      </p>
-    );
+  const handleFiltersChange = (next: HistoryFiltersValue) => {
+    setFilters(next);
+    setPage(0);
+  };
+
+  const handleReset = () => {
+    setFilters(defaultFilters);
+    setPage(0);
+  };
+
+  const items = data ?? [];
+  const hasNextPage = items.length === filters.limit;
 
   return (
     <div>
-      <h2 className="mb-4 text-xl font-semibold">
-        Historia zmian ({data?.length ?? 0})
-      </h2>
+      <h2 className="mb-4 text-xl font-semibold">Historia zmian</h2>
 
-      {!data || data.length === 0 ? (
+      <HistoryFilters
+        participants={participants}
+        value={filters}
+        onChange={handleFiltersChange}
+        onReset={handleReset}
+      />
+
+      {error && (
+        <p className="mb-3 rounded bg-red-50 px-3 py-2 text-red-700 dark:bg-red-950/40 dark:text-red-300">
+          Nie udało się pobrać historii. Upewnij się, że Mongo działa.
+        </p>
+      )}
+
+      {isLoading ? (
+        <p className="text-slate-600 dark:text-slate-300">Ładowanie...</p>
+      ) : items.length === 0 ? (
         <p className="rounded border border-dashed p-6 text-center text-slate-500 dark:text-slate-400">
-          Brak zdarzeń.
+          Brak zdarzeń pasujących do filtrów.
         </p>
       ) : (
-        <ol className="space-y-2">
-          {data.map((entry, idx) => {
+        <ol
+          className={
+            'space-y-2 transition-opacity ' + (isFetching ? 'opacity-60' : 'opacity-100')
+          }
+        >
+          {items.map((entry, idx) => {
             const { summary, changes } = describeEntry(entry);
             return (
               <li
-                key={idx}
+                key={`${entry.occurredAt}-${idx}`}
                 className="flex items-start gap-3 rounded border bg-white dark:bg-slate-900 p-3"
               >
                 <div className="mt-0.5 h-2 w-2 shrink-0 rounded-full bg-brand-500" />
@@ -221,7 +232,9 @@ export function HistoryTab({ tripId }: Props) {
                       {format(new Date(entry.occurredAt), 'dd.MM.yyyy HH:mm')}
                     </span>
                   </div>
-                  {summary && <p className="text-sm text-slate-600 dark:text-slate-300">{summary}</p>}
+                  {summary && (
+                    <p className="text-sm text-slate-600 dark:text-slate-300">{summary}</p>
+                  )}
                   {changes && changes.length > 0 && (
                     <ul className="mt-1 space-y-0.5 text-xs text-slate-600 dark:text-slate-300">
                       {changes.map(([field, { before, after }]) => (
@@ -234,7 +247,9 @@ export function HistoryTab({ tripId }: Props) {
                             {formatValue(before)}
                           </span>
                           {' → '}
-                          <span className="text-slate-800 dark:text-slate-100">{formatValue(after)}</span>
+                          <span className="text-slate-800 dark:text-slate-100">
+                            {formatValue(after)}
+                          </span>
                         </li>
                       ))}
                     </ul>
@@ -248,6 +263,32 @@ export function HistoryTab({ tripId }: Props) {
           })}
         </ol>
       )}
+
+      <div className="mt-4 flex items-center justify-between gap-4">
+        <span className="text-xs text-slate-500 dark:text-slate-400">
+          Strona {page + 1} · pokazano {items.length} wpisów
+        </span>
+        <div className="flex gap-2">
+          <button
+            type="button"
+            onClick={() => setPage((p) => Math.max(0, p - 1))}
+            disabled={page === 0 || isFetching}
+            className="btn-secondary inline-flex items-center gap-1"
+          >
+            <ChevronLeft className="h-4 w-4" />
+            Poprzednia
+          </button>
+          <button
+            type="button"
+            onClick={() => setPage((p) => p + 1)}
+            disabled={!hasNextPage || isFetching}
+            className="btn-secondary inline-flex items-center gap-1"
+          >
+            Następna
+            <ChevronRight className="h-4 w-4" />
+          </button>
+        </div>
+      </div>
     </div>
   );
 }
